@@ -8,6 +8,7 @@
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from loguru import logger as optic
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -47,6 +48,7 @@ async def submit_hook(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.user)),
 ):
+    optic.debug("hook submit: name={}", req.name)
     existing = await db.execute(
         select(HookListing).where(HookListing.name == req.name, HookListing.submitted_by == current_user.id)
     )
@@ -104,6 +106,7 @@ async def list_hooks(
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(optional_current_user),
 ):
+    optic.debug("hook list: search={}", search)
     stmt = (
         select(HookListing)
         .join(HookVersion, HookListing.latest_version_id == HookVersion.id)
@@ -128,6 +131,7 @@ async def my_hooks(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.user)),
 ):
+    optic.debug("my_hooks called")
     stmt = (
         select(HookListing).where(HookListing.submitted_by == current_user.id).order_by(HookListing.created_at.desc())
     )
@@ -143,6 +147,7 @@ async def get_hook(
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(optional_current_user),
 ):
+    optic.debug("hook get: listing_id={}", listing_id)
     listing = await resolve_listing(HookListing, listing_id, db, require_status=ListingStatus.approved)
     if listing:
         await audit(
@@ -171,6 +176,7 @@ async def install_hook(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.user)),
 ):
+    optic.debug("hook install: listing_id={}", listing_id)
     listing = await resolve_listing(HookListing, listing_id, db, require_status=ListingStatus.approved)
     if not listing:
         listing = await resolve_listing(HookListing, listing_id, db)
@@ -204,6 +210,7 @@ async def save_hook_draft(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.user)),
 ):
+    optic.debug("save_hook_draft: req={}", req)
     listing = HookListing(
         name=req.name,
         owner=req.owner or current_user.username or current_user.email,
@@ -254,6 +261,7 @@ async def update_hook_draft(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.user)),
 ):
+    optic.debug("update_hook_draft: listing_id={}", listing_id)
     listing = await resolve_listing(HookListing, listing_id, db)
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
@@ -320,6 +328,7 @@ async def start_edit_hook(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.user)),
 ):
+    optic.debug("start_edit_hook: listing_id={}", listing_id)
     listing = await resolve_listing(HookListing, listing_id, db)
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
@@ -343,6 +352,7 @@ async def cancel_edit_hook(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.user)),
 ):
+    optic.debug("cancel_edit_hook: listing_id={}", listing_id)
     listing = await resolve_listing(HookListing, listing_id, db)
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
@@ -362,6 +372,7 @@ async def submit_hook_draft(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.user)),
 ):
+    optic.debug("submit_hook_draft: listing_id={}", listing_id)
     listing = await resolve_listing(HookListing, listing_id, db)
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
@@ -388,6 +399,7 @@ async def delete_hook(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(UserRole.user)),
 ):
+    optic.debug("hook delete: listing_id={}", listing_id)
     listing = await resolve_listing(HookListing, listing_id, db)
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
