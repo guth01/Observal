@@ -48,19 +48,8 @@ function LoginContent() {
       setLoading(true);
       window.history.replaceState({}, "", "/login");
 
-      fetch("/api/v1/auth/exchange", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: ssoCode }),
-      })
-        .then(async (res) => {
-          if (!res.ok) {
-            const text = await res.text().catch(() => res.statusText);
-            throw new Error(text);
-          }
-          return res.json();
-        })
-        .then((data: { access_token: string; refresh_token: string; user: { role: string; name: string; email: string; username?: string; avatar_url?: string | null } }) => {
+      auth.exchangeCode({ code: ssoCode })
+        .then((data) => {
           setTokens(data.access_token, data.refresh_token);
           setUserRole(data.user.role);
           setUserName(data.user.name);
@@ -159,7 +148,11 @@ function LoginContent() {
 
   function handleSsoLogin() {
     setSsoLoading(true);
-    window.location.href = "/api/v1/auth/oauth/login";
+    const nextParam = searchParams.get("next");
+    const url = nextParam && nextParam.startsWith("/")
+      ? `/api/v1/auth/oauth/login?next=${encodeURIComponent(nextParam)}`
+      : "/api/v1/auth/oauth/login";
+    window.location.href = url;
   }
 
   if (mustChangePassword) {

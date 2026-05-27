@@ -9,6 +9,7 @@
 # SPDX-FileCopyrightText: 2026 Shreem Seth <shreemseth26@gmail.com>
 # SPDX-FileCopyrightText: 2026 Swathi Saravanan <ss4522@cornell.edu>
 # SPDX-FileCopyrightText: 2026 Vishnu Muthiah <vishnu.muthiah04@gmail.com>
+# SPDX-FileCopyrightText: 2026 Yash Gadgil <yashgadgil08@gmail.com>
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import os
@@ -36,6 +37,7 @@ from api.graphql import get_context_dep, schema
 from api.middleware.audit import AuditMiddleware
 from api.middleware.content_type import ContentTypeMiddleware
 from api.middleware.request_id import RequestIDMiddleware
+from api.middleware.trusted_proxy import TrustedProxyMiddleware
 from api.ratelimit import limiter
 from api.routes.admin import router as admin_router
 from api.routes.agent import router as agent_router
@@ -43,6 +45,7 @@ from api.routes.alert import router as alert_router
 from api.routes.audit import router as audit_router
 from api.routes.auth import router as auth_router
 from api.routes.bulk import router as bulk_router
+from api.routes.co_authors import router as co_authors_router
 from api.routes.component_source import router as component_source_router
 from api.routes.config import router as config_router
 from api.routes.dashboard import router as dashboard_router
@@ -328,6 +331,11 @@ if AUDIT_LICENSED:
 # --- GZip compression for responses >= 500 bytes ---
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
+# --- Trusted proxy: resolve real client IP + scheme (SEC-003) ---
+# Replaces Uvicorn --proxy-headers so proxy trust is controlled by a single
+# dynamic setting (security.trusted_proxy_ips) shared with the rate limiter.
+app.add_middleware(TrustedProxyMiddleware)
+
 
 class CacheControlMiddleware(BaseHTTPMiddleware):
     """Set Cache-Control headers on responses served from cache."""
@@ -382,6 +390,7 @@ app.include_router(alert_router)
 app.include_router(sessions_router)
 app.include_router(component_source_router)
 app.include_router(bulk_router)
+app.include_router(co_authors_router)
 app.include_router(config_router)
 app.include_router(registry_models_router)
 app.include_router(support_router)

@@ -57,9 +57,17 @@ Without `--git`, opens interactive JSON paste (accepts IDE config block, named c
 
 ### Skill
 
+Git-based (server validates SKILL.md from repo):
 ```bash
 observal skill submit --skill-md ./SKILL.md --git-url https://github.com/org/repo --git-ref main
 ```
+
+Registry direct (inline SKILL.md + optional script, no git repo needed):
+```bash
+observal skill submit --skill-md ./SKILL.md --script ./run.sh --delivery-mode registry_direct
+```
+
+On install, registry_direct skills write `<skill-name>/SKILL.md` and `<skill-name>/scripts/<filename>` into the IDE skills directory.
 
 ### Hook
 
@@ -142,6 +150,24 @@ observal sandbox delete NAME --yes
 ```
 
 ---
+
+## Procedure: Manage Co-Authors
+
+Co-authors have equal access to the component owner (edit, publish, manage co-authors).
+
+```bash
+# List
+observal co-authors list mcps <id-or-name>
+
+# Add
+observal co-authors add skills <id-or-name> user@example.com
+
+# Remove
+observal co-authors remove hooks <id-or-name> <user-uuid>
+```
+
+Entity types: `mcps`, `skills`, `hooks`, `prompts`, `sandboxes`.
+
 
 ## Error Reference
 

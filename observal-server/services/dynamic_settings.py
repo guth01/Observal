@@ -183,7 +183,12 @@ DEFAULTS: dict[str, str] = {
     "security.allow_draft_install": "false",
     "security.rate_limit_auth": "10/minute",
     "security.rate_limit_auth_strict": "5/minute",
-    "security.trusted_proxy_ips": "",
+    # NOTE: Defaults to RFC 1918 private ranges so the Docker compose stack
+    # works out of the box (nginx LB connects from a Docker-bridge IP).
+    # Tradeoff: any process on the same private network can inject XFF headers
+    # that the middleware will trust. For hardened deployments where the API is
+    # directly exposed, narrow this to only the actual proxy IP(s).
+    "security.trusted_proxy_ips": "172.16.0.0/12,10.0.0.0/8,192.168.0.0/16,127.0.0.1",
     # SAML
     "saml.idp_entity_id": "",
     "saml.idp_sso_url": "",
@@ -216,8 +221,6 @@ DEFAULTS: dict[str, str] = {
     "observability.log_format": "json",  # 'json' or 'console' (colorized). Requires restart.
     "observability.enable_openapi": "false",
     "observability.enable_metrics": "false",
-    # Developer
-    "developer.default_agent_visibility": "public",
     # Misc
     "misc.max_cli_version": "",  # empty = no upper bound
     "misc.api_version": "2026-05-01",  # date-based, bumped on breaking changes
@@ -294,13 +297,6 @@ SECTIONS: list[dict[str, Any]] = [
         "description": "Logging and metrics configuration.",
         "icon": "activity",
         "keys": [k for k in DEFAULTS if k.startswith("observability.")],
-    },
-    {
-        "id": "developer",
-        "title": "Developer",
-        "description": "Development convenience settings. Controls API docs exposure, default visibility, and other developer-facing behavior.",
-        "icon": "code",
-        "keys": [k for k in DEFAULTS if k.startswith("developer.")],
     },
     {
         "id": "misc",
